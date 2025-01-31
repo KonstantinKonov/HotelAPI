@@ -1,0 +1,11 @@
+FROM python:3.10-slim-buster
+
+WORKDIR /app
+
+COPY celery_requirements.txt .
+
+RUN pip install -r celery_requirements.txt
+
+COPY src/config.py src/tasks/tasks.py src/tasks/celery_app.py .env ./
+
+CMD ["celery", "--app=celery_app:celery_instance worker -l INFO"]
