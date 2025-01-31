@@ -11,8 +11,7 @@ docker compose up --build
 
 ### Database schemas
 
-![](dbschema)
-
+![](https://github.com/KonstantinKonov/HotelAPI/blob/main/readme-img/db_schema.png)
 
 
 ### Architecture Patterns
@@ -31,5 +30,3 @@ docker compose up --build
 #### Tests
 
 #### Deployment
-
-[dbschema]: https://github.com/KonstantinKonov/HotelAPI/blob/main/readme-img/db_schema.png
