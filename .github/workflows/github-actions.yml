@@ -1,0 +1,84 @@
+name: CI/CD pipeline
+#run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Build the Docker image
+        run: docker build -t konstantinkonov/app:latest .
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push the Docker Image
+        run: docker push konstantinkonov/app:latest
+  
+  lint-format:
+    name: Lint and Format
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Pull the Docker image
+        run: docker pull konstantinkonov/app:latest
+      - name: Run Ruff check
+        run: |
+          docker network create myNetwork  
+          docker run --rm --network myNetwork konstantinkonov/app:latest ruff check --exit-zero .
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Pull the Docker image
+        run: docker pull konstantinkonov/app:latest
+      #- name: Create .env file
+        #run: |
+          #echo "MODE=${{ secrets.MODE }}" > .env
+          #echo "APP_HOST=${{ secrets.APP_HOST }}" > .env
+          #echo "APP_PORT=${{ secrets.APP_PORT }}" > .env
+          #echo "DB_HOST=${{ secrets.DB_HOST }}" > .env
+          #echo "DB_PORT=${{ secrets.DB_PORT }}" > .env
+          #echo "POSTGRES_USER=${{ secrets.POSTGRES_USER }}" > .env
+          #echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
+          #echo "POSTGRES_DB=${{ secrets.POSTGRES_DB }}" > .env
+          #echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" > .env
+          #echo "JWT_ALGORITHM=${{ secrets.JWT_ALGORITHM }}" > .env
+          #echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" > .env
+      - name: Run migration
+        run: |
+          docker network create mynetwork
+          docker run --rm --network mynetwork --env-file .env-test -d postgres:14
+          docker run --rm --network mynetwork --env-file .env-test -d konstantinkonov/app:latest alembic upgrade head
+          docker run --rm --network mynetwork -d konstantinkonov/app:latest pytest -s -v
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Deploy to server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_PRIVATE_KEY }}
+          script: |
+            cd fastapi_course
+            git pull
+            docker compose up --build -d
