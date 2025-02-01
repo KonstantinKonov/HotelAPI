@@ -12,7 +12,7 @@ docker compose up --build
 ### Database schemas
 
 <p align="center">
-  <img src="https://github.com/KonstantinKonov/HotelAPI/blob/main/readme-img/db_schema.png"/>
+  <img src="[db_schema]"/>
 </p>
 
 ### Architecture Patterns
@@ -111,3 +111,4 @@ CI/CD pipeline is build using GitHub Actions service.
 
 #### Deployment
 
+[db_schema]: https://github.com/KonstantinKonov/HotelAPI/blob/main/contrib/db_schema.png
